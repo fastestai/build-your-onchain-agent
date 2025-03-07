@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+// import { createClient } from '@supabase/supabase-js';
 import { processSwapData } from '../../src/utils/swapProcessor';
 import { solParser } from '../../src/utils/txParser';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // Handle Webhook request
 export default async function handler(req, res) {
@@ -34,15 +34,21 @@ export default async function handler(req, res) {
     return res.status(200).json({ skipped: true, message: 'No swap data' });
   }
 
+  console.log("processedData", processedData);
+
+
+
+
+
   // Store to database
-  const { error } = await supabase.from('txs').insert([{
-    ...processedData,
-    signature: txData.signature
-  }]);
-  if (error) {
-    console.error('Error inserting into Supabase:', error);
-    return res.status(500).json({ error: error });
-  }
+  // const { error } = await supabase.from('txs').insert([{
+  //   ...processedData,
+  //   signature: txData.signature
+  // }]);
+  // if (error) {
+  //   console.error('Error inserting into Supabase:', error);
+  //   return res.status(500).json({ error: error });
+  // }
   console.log('Successfully processed and stored with parser:', txData.events?.swap ? 'helius' : 'shyft');
   return res.status(200).json({ 
     success: true

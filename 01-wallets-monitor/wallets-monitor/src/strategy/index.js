@@ -8,7 +8,7 @@ import { sendSumMessage } from '../utils/aiSummary.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+// const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 // Configuration constants
 const MAX_AGE_DAYS = 7;
@@ -30,18 +30,22 @@ async function checkFilter(tokenAddress) {
       
       // Create and send message to Telegram
       const message = createMsg(tokenInfo, analysis);
-      const tgResponse = await sendTelegramMessage(message);
-      
-      if (tgResponse?.ok === true) {
-        const messageId = tgResponse.result.message_id;
-        // Send AI summary message
-        await sendSumMessage(tokenInfo, messageId);
-        console.log(`[${getTimeStamp()}] Successfully sent analysis for token ${tokenAddress} to Telegram`);
-      } 
+      // const tgResponse = await sendTelegramMessage(message);
+      //
+      // if (tgResponse?.ok === true) {
+      //   const messageId = tgResponse.result.message_id;
+      //   // Send AI summary message
+      //   await sendSumMessage(tokenInfo, messageId);
+      //   console.log(`[${getTimeStamp()}] Successfully sent analysis for token ${tokenAddress} to Telegram`);
+      // }
     } 
   } catch (error) {
     console.error(`[${getTimeStamp()}] Error checking token ${tokenAddress}:`, error);
   }
+}
+
+export async function generateTokenInfo(tokenAddress) {
+
 }
 
 // Subscribe to INSERT events on the txs table

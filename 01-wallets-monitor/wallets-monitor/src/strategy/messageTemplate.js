@@ -50,4 +50,3 @@ ${formatSmartMoney(analysis)}
 <a href="https://dexscreener.com/solana/${tokenInfo.address}">DexScreener</a> | <a href="https://gmgn.ai/sol/token/${tokenInfo.address}">GMGN</a>${tokenInfo.website ? ` | <a href="${tokenInfo.website}">Website</a>` : ''}${tokenInfo.twitter ? ` | <a href="${tokenInfo.twitter}">Twitter</a>` : ''}
 `.trim();
 }
-

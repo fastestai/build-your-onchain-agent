@@ -13,16 +13,20 @@ if (!HELIUS_API_KEY) {
 }
 
 const helius = new Helius(HELIUS_API_KEY);
+const address = [
+
+]
 
 // Set up SWAP type Webhook
 export const setupSwapWebhook = async () => {
   try {
-    const { data, error } = await supabase.from('wallets').select('address');
-    if (error) {
-      throw new Error('Failed to fetch wallet addresses from Supabase');
-    }
 
-    const accountAddresses = data.map(row => row.address).filter(addr => addr);
+    // const { data, error } = await supabase.from('wallets').select('address');
+    // if (error) {
+    //   throw new Error('Failed to fetch wallet addresses from Supabase');
+    // }
+
+    const accountAddresses = address
 
     if (accountAddresses.length === 0) {
       throw new Error('No valid wallet addresses found in wallets.txt.');
