@@ -1,6 +1,10 @@
 // import { createClient } from '@supabase/supabase-js';
-import { processSwapData } from '../../src/utils/swapProcessor';
+import {processSwapData, SOL_ADDRESS, USDC_ADDRESS} from '../../src/utils/swapProcessor';
 import { solParser } from '../../src/utils/txParser';
+import {checkFilter} from '../../src/strategy/index';
+import {saveData} from '../../src/utils/fastest.js'
+
+// import {formatTimeAgo} from "@/utils/txsAnalyzer.js";
 
 // const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -34,13 +38,40 @@ export default async function handler(req, res) {
     return res.status(200).json({ skipped: true, message: 'No swap data' });
   }
 
+  if(processedData)
   console.log("processedData", processedData);
 
+  const {token_out_address: tokenOutAddress} = processedData
+  if (tokenOutAddress !== SOL_ADDRESS && tokenOutAddress !== USDC_ADDRESS) {
+    const token = await checkFilter(tokenOutAddress)
+    if(!token) return res.status(200).json({ skipped: true, message: 'No swap data' });
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - token.createdAt;
+    const age = Math.floor(diff / 60);
+    const body = {
+      "user_id":"67ca8d96341a6b2f44d7a075",
+      "entity_type":"token",
+      "timestamp": processedData.timestamp,
+      "source": "gold dog",
+      "data":{
+        "token": token.name,
+        "mc": token.marketCap,
+        "1h-vol": token.volumeH1,
+        "24h-vol": token.volumeH24,
+        "liq": token.liquidity,
+        "price": token.priceUSD,
+        "age": age
+      }
+    }
+    await saveData(body)
+  }
 
 
 
 
-  // Store to database
+
+
+    // Store to database
   // const { error } = await supabase.from('txs').insert([{
   //   ...processedData,
   //   signature: txData.signature
