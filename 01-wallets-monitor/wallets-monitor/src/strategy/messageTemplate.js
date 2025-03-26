@@ -1,10 +1,14 @@
 import { formatTimeAgo } from '../utils/txsAnalyzer.js';
+import { getCollection } from '../utils/mongodb.js';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Formats a number to a readable currency string with appropriate suffixes
 function formatNumber(number) {
   // Ensure number is a numeric type
   const num = Number(number);
-  
+
   // Check if it's a valid number
   if (isNaN(num)) {
     return '$0.00';
@@ -29,7 +33,7 @@ function formatSmartMoney(analysis) {
 // Creates a formatted message with token information and smart money analysis
 export function createMsg(tokenInfo, analysis) {
   const smartMoneyCount = Object.keys(analysis).length;
-  
+
   return `
 \u{1F436} Multi Buy Token: <b>$${tokenInfo.symbol}</b>
 <code>${tokenInfo.address}</code>
@@ -51,3 +55,17 @@ ${formatSmartMoney(analysis)}
 `.trim();
 }
 
+export async function saveMsg(tokenInfo, analysis) {
+  const doc = {
+    chain: tokenInfo.chain,
+    tokenAddress: tokenInfo.address,
+    data: {
+      tokenInfo,
+      analysis,
+    },
+    source: 'https://github.com/fastestai/build-your-onchain-agent',
+    createdAt: new Date(),
+  };
+  const collection = await getCollection('ai_qa', 'messages');
+  await collection.insertOne(doc);
+}

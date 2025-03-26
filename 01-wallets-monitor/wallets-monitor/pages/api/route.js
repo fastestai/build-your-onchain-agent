@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { processSwapData } from '../../src/utils/swapProcessor';
 import { solParser } from '../../src/utils/txParser';
+import { getCollection } from '@/utils/mongodb';
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -19,13 +20,17 @@ export default async function handler(req, res) {
     return res.status(200).json({ skipped: true, message: 'Empty data' });
   }
 
+  // Save tx data to MongoDB
+  const collection = await getCollection('ai_qa', 'helius_txs_enhanced');
+  await collection.insertOne(txData);
+
   // Skip PUMP_FUN transactions
   if (txData.source === 'PUMP_FUN') {
     return res.status(200).json({ skipped: true, message: 'Skipped PUMP_FUN transaction', signature: txData.signature });
-  }    
+  }
   // Process transaction data
   let processedData = null;
-  
+
   if (txData.events?.swap) {
     processedData = processSwapData(txData);
   } else if (txData.signature) {
@@ -48,7 +53,7 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error });
   }
   console.log('Successfully processed and stored with parser:', txData.events?.swap ? 'helius' : 'shyft');
-  return res.status(200).json({ 
+  return res.status(200).json({
     success: true
   });
 }

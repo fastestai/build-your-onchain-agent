@@ -3,7 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { SOL_ADDRESS, USDC_ADDRESS } from '../utils/swapProcessor.js';
 import { sendTelegramMessage } from '../utils/telegram.js';
 import { analyzeTokenTxs } from '../utils/txsAnalyzer.js';
-import { createMsg } from './messageTemplate.js';
+import { createMsg, saveMsg } from './messageTemplate.js';
 import { sendSumMessage } from '../utils/aiSummary.js';
 import dotenv from 'dotenv';
 
@@ -21,24 +21,28 @@ const getTimeStamp = () => {
 // Check if token meets filtering criteria
 async function checkFilter(tokenAddress) {
   try {
-    const tokenInfo = await DexScreener.getTokenInfo('solana', tokenAddress);   
+    const tokenInfo = await DexScreener.getTokenInfo('solana', tokenAddress);
     if (!tokenInfo) return;
-    
+
     const pairAge = (Date.now() / 1000 - tokenInfo.createdAt) / (60 * 60 * 24);
     if (pairAge <= MAX_AGE_DAYS && tokenInfo.marketCap >= MIN_MARKET_CAP) {
       const analysis = await analyzeTokenTxs(tokenAddress);
-      
-      // Create and send message to Telegram
-      const message = createMsg(tokenInfo, analysis);
-      const tgResponse = await sendTelegramMessage(message);
-      
-      if (tgResponse?.ok === true) {
-        const messageId = tgResponse.result.message_id;
-        // Send AI summary message
-        await sendSumMessage(tokenInfo, messageId);
-        console.log(`[${getTimeStamp()}] Successfully sent analysis for token ${tokenAddress} to Telegram`);
-      } 
-    } 
+
+      // Save message to MongoDB
+      await saveMsg(tokenInfo, analysis);
+      console.log(`[${getTimeStamp()}] Successfully saved analysis for token ${tokenAddress} to MongoDB`);
+
+      // // Create and send message to Telegram
+      // const message = createMsg(tokenInfo, analysis);
+      // const tgResponse = await sendTelegramMessage(message);
+
+      // if (tgResponse?.ok === true) {
+      //   const messageId = tgResponse.result.message_id;
+      //   // Send AI summary message
+      //   await sendSumMessage(tokenInfo, messageId);
+      //   console.log(`[${getTimeStamp()}] Successfully sent analysis for token ${tokenAddress} to Telegram`);
+      // }
+    }
   } catch (error) {
     console.error(`[${getTimeStamp()}] Error checking token ${tokenAddress}:`, error);
   }
@@ -60,13 +64,13 @@ async function startMonitor() {
         const tokenOutAddress = newTx.token_out_address;
         const currentAccount = newTx.account;
         const currentTimestamp = newTx.timestamp;
-        
+
         // Check if it's not SOL or USDC (buy transaction)
         if (tokenOutAddress !== SOL_ADDRESS && tokenOutAddress !== USDC_ADDRESS) {
           const sixHoursAgo = new Date(currentTimestamp);
           sixHoursAgo.setHours(sixHoursAgo.getHours() - 6);
-          const sixHoursAgoTimestamp = Math.floor(sixHoursAgo.getTime() / 1000); 
-          
+          const sixHoursAgoTimestamp = Math.floor(sixHoursAgo.getTime() / 1000);
+
           // Query if other wallets bought this token in the last 6 hours
           const { data, error } = await supabase
             .from('txs')
@@ -75,12 +79,12 @@ async function startMonitor() {
             .neq('account', currentAccount)
             .gte('timestamp', sixHoursAgoTimestamp)
             .limit(1);
-            
+
           if (error) {
             console.error(`[${getTimeStamp()}] Query error:`, error);
             return;
           }
-          
+
           // If transactions from other wallets found
           if (data && data.length > 0) {
             console.log(`[${getTimeStamp()}] Detected new multi-wallet transaction for token: ${tokenOutAddress}`);
