@@ -21,8 +21,12 @@ export default async function handler(req, res) {
   }
 
   // Save tx data to MongoDB
-  const collection = await getCollection('ai_qa', 'helius_txs_enhanced');
-  await collection.insertOne(txData);
+  try {
+    const collection = await getCollection('ai_qa', 'helius_txs_enhanced');
+    collection.insertOne(txData);
+  } catch (error) {
+    console.error('Error inserting into MongoDB:', error);
+  }
 
   // Skip PUMP_FUN transactions or non-PUMP-AMM transfer
   if (txData.source === 'PUMP_FUN' ||

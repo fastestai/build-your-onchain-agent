@@ -22,7 +22,10 @@ const getTimeStamp = () => {
 async function checkFilter(tokenAddress) {
   try {
     const tokenInfo = await DexScreener.getTokenInfo('solana', tokenAddress);
-    if (!tokenInfo) return;
+    if (!tokenInfo) {
+      console.log(`[${getTimeStamp()}] Token info not found for token: ${tokenAddress}`);
+      return;
+    }
 
     const pairAge = (Date.now() / 1000 - tokenInfo.createdAt) / (60 * 60 * 24);
     if (pairAge <= MAX_AGE_DAYS && tokenInfo.marketCap >= MIN_MARKET_CAP) {
@@ -42,6 +45,8 @@ async function checkFilter(tokenAddress) {
       //   await sendSumMessage(tokenInfo, messageId);
       //   console.log(`[${getTimeStamp()}] Successfully sent analysis for token ${tokenAddress} to Telegram`);
       // }
+    } else {
+      console.log(`[${getTimeStamp()}] Token ${tokenAddress} does not meet filtering criteria: ${pairAge} should be less than ${MAX_AGE_DAYS}, ${tokenInfo.marketCap} should be greater than ${MIN_MARKET_CAP}`);
     }
   } catch (error) {
     console.error(`[${getTimeStamp()}] Error checking token ${tokenAddress}:`, error);
@@ -90,6 +95,8 @@ async function startMonitor() {
             console.log(`[${getTimeStamp()}] Detected new multi-wallet transaction for token: ${tokenOutAddress}`);
             // Call filter check function
             await checkFilter(tokenOutAddress);
+          } else {
+            console.log(`[${getTimeStamp()}] No transactions from other wallets found for token: ${tokenOutAddress}`);
           }
         }
       }
